@@ -69,6 +69,5 @@ function! pdb#debug() abort
     let options = ['-c continue']
   endif
   let run_command = printf('python -m pdb %s %s', join(options, ' '), filename)
-  echo run_command
   exe printf('vert terminal ++close %s', run_command)
 endfunction
