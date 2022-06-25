@@ -40,6 +40,17 @@ function! pdb#unset_breakpoint() abort
   call s:unset_breakpoint(filename, linenr)
 endfunction
 
+function! pdb#toggle_breakpoint() abort
+  let filename = expand('%')
+  let linenr = line('.')
+  let key = printf('%s:%d', filename, linenr)
+  if s:breakpoints->has_key(key)
+    call s:unset_breakpoint(filename, linenr)
+  else
+    call s:set_breakpoint(filename, linenr)
+  endif
+endfunction
+
 function! pdb#debug() abort
   let filename = expand('%')
   if len(s:breakpoints) > 0
