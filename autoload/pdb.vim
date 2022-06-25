@@ -1,17 +1,20 @@
-let s:breakpoints = {}
+let s:Breakpoints = {
+      \ 'data': {},
+      \ '_next_bp_id': 0
+      \ }
 
-let s:next_bp_id = 0
-function! s:get_bp_id() abort
-  let s:next_bp_id += 1
-  return s:next_bp_id
+function! s:Breakpoints.as_option() abort
+  return self.data->keys()->map({_, v -> printf('-c "break %s"', v)})
 endfunction
 
-sign define breakpoint text=BP texthl=Search
+function! s:Breakpoints.len() abort
+  return len(self.data)
+endfunction
 
-function! s:set_breakpoint(filename, linenr) abort
+function! s:Breakpoints.add(filename, linenr) abort
   let key = printf('%s:%d', a:filename, a:linenr)
-  let id = s:get_bp_id()
-  let s:breakpoints[key] = {
+  let id = self.next_bp_id()
+  let self.data[key] = {
         \ 'id': id,
         \ 'filename': a:filename,
         \ 'linenr': a:linenr,
@@ -20,41 +23,48 @@ function! s:set_breakpoint(filename, linenr) abort
   exe printf('sign place %d line=%d name=breakpoint', id, a:linenr)
 endfunction
 
-function! s:unset_breakpoint(filename, linenr) abort
+function! s:Breakpoints.remove(filename, linenr) abort
   let key = printf('%s:%d', a:filename, a:linenr)
-  let id = s:breakpoints[key].id
-  unlet s:breakpoints[key]
+  let id = self.data[key].id
+  unlet self.data[key]
   " unset sign
   exe printf('sign unplace %d', id)
 endfunction
 
+function! s:Breakpoints.next_bp_id() abort
+  let self._next_bp_id += 1
+  return self._next_bp_id
+endfunction
+
+sign define breakpoint text=BP texthl=Search
+
 function! pdb#set_breakpoint() abort
   let filename = expand('%')
   let linenr = line('.')
-  call s:set_breakpoint(filename, linenr)
+  call s:Breakpoints.add(filename, linenr)
 endfunction
 
 function! pdb#unset_breakpoint() abort
   let filename = expand('%')
   let linenr = line('.')
-  call s:unset_breakpoint(filename, linenr)
+  call s:Breakpoints.remove(filename, linenr)
 endfunction
 
 function! pdb#toggle_breakpoint() abort
   let filename = expand('%')
   let linenr = line('.')
   let key = printf('%s:%d', filename, linenr)
-  if s:breakpoints->has_key(key)
-    call s:unset_breakpoint(filename, linenr)
+  if s:Breakpoints.data->has_key(key)
+    call s:Breakpoints.remove(filename, linenr)
   else
-    call s:set_breakpoint(filename, linenr)
+    call s:Breakpoints.add(filename, linenr)
   endif
 endfunction
 
 function! pdb#debug() abort
   let filename = expand('%')
-  if len(s:breakpoints) > 0
-    let options = s:breakpoints->keys()->map({_, v -> printf('-c "break %s"', v)})
+  if s:Breakpoints.len() > 0
+    let options = s:Breakpoints.as_option()
   else
     let options = ['-c continue']
   endif
