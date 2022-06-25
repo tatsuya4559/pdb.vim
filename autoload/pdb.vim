@@ -7,9 +7,6 @@ function! s:get_bp_id() abort
 endfunction
 
 sign define breakpoint text=BP texthl=Search
-function! s:set_breakpoint_sign(id, linenr) abort
-  exe printf('sign place %d line=%d name=breakpoint', a:id, a:linenr)
-endfunction
 
 function! s:set_breakpoint(filename, linenr) abort
   let key = printf('%s:%d', a:filename, a:linenr)
@@ -19,13 +16,28 @@ function! s:set_breakpoint(filename, linenr) abort
         \ 'filename': a:filename,
         \ 'linenr': a:linenr,
         \ }
-  call s:set_breakpoint_sign(id, a:linenr)
+  " set sign
+  exe printf('sign place %d line=%d name=breakpoint', id, a:linenr)
+endfunction
+
+function! s:unset_breakpoint(filename, linenr) abort
+  let key = printf('%s:%d', a:filename, a:linenr)
+  let id = s:breakpoints[key].id
+  unlet s:breakpoints[key]
+  " unset sign
+  exe printf('sign unplace %d', id)
 endfunction
 
 function! pdb#set_breakpoint() abort
   let filename = expand('%')
   let linenr = line('.')
   call s:set_breakpoint(filename, linenr)
+endfunction
+
+function! pdb#unset_breakpoint() abort
+  let filename = expand('%')
+  let linenr = line('.')
+  call s:unset_breakpoint(filename, linenr)
 endfunction
 
 function! pdb#debug() abort
