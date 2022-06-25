@@ -72,4 +72,3 @@ function! pdb#debug() abort
   echo run_command
   exe printf('vert terminal ++close %s', run_command)
 endfunction
-
